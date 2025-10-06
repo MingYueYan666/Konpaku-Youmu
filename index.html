@@ -1,14 +1,490 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <title>猫娘站</title>
-        <!-- 修正了图标设置，使用标准尺寸 -->
-        <link rel="icon" href="icon.png" sizes="32x32" type="image/png">
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猫娘站</title>
+    <link rel="icon" href="icon.png" type="image/png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+    <style>
+        /* 全局样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Comic Sans MS", "Microsoft YaHei", Arial, sans-serif;
+        }
 
-    </head>
-    <body>
-        <img src="web.jpg" width="240" alt="猫娘图片"/>
-        <h1>野兽先辈</h1>
-    </body>
+        /* 背景设置（主背景+悬浮爪印装饰） */
+        body {
+            background-image: url("10/9.png");
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding-top: 100px;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255,245,250,0.9), rgba(255,220,235,0.85));
+            z-index: -1;
+        }
+
+        /* 悬浮爪印装饰 */
+        .paw-decor {
+            position: fixed;
+            color: rgba(255,100,150,0.15);
+            font-size: 60px;
+            z-index: -1;
+            animation: pawFloat 15s linear infinite;
+        }
+        .paw1 { top: 15%; left: 10%; animation-delay: 0s; }
+        .paw2 { top: 60%; left: 85%; animation-delay: 3s; }
+        .paw3 { top: 30%; left: 75%; animation-delay: 6s; }
+        .paw4 { top: 80%; left: 20%; animation-delay: 9s; }
+        @keyframes pawFloat {
+            0% { transform: translate(0,0) rotate(0deg); opacity: 0.15; }
+            25% { transform: translate(20px,-15px) rotate(10deg); opacity: 0.2; }
+            50% { transform: translate(0,30px) rotate(0deg); opacity: 0.15; }
+            75% { transform: translate(-20px,-15px) rotate(-10deg); opacity: 0.2; }
+            100% { transform: translate(0,0) rotate(0deg); opacity: 0.15; }
+        }
+
+        /* 顶部导航栏 */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(255,100,150,0.3);
+            z-index: 100;
+            background: linear-gradient(90deg, #ff9eb5, #ffb6c1, #ff9eb5);
+            transition: all 0.5s ease;
+        }
+        .header.scroll {
+            padding: 15px 20px;
+            background: linear-gradient(90deg, #ff6b9e, #ff8fab, #ff6b9e);
+            box-shadow: 0 6px 25px rgba(255,60,120,0.4);
+        }
+        .cat-ear {
+            font-size: 28px;
+            color: white;
+            margin: 0 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .header h1 {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            letter-spacing: 2px;
+            background: linear-gradient(white, #ffe6ef);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* 新增：侧边栏导航 */
+        .sidebar {
+            position: fixed;
+            top: 100px; /* 与导航栏底部对齐 */
+            left: 0;
+            width: 240px;
+            height: calc(100vh - 100px); /* 占满剩余高度 */
+            background-color: rgba(255,255,255,0.95);
+            border-radius: 0 16px 16px 0;
+            box-shadow: 4px 0 20px rgba(255,100,150,0.15);
+            padding: 25px 20px;
+            z-index: 90; /* 低于导航栏，高于主内容 */
+            overflow-y: auto; /* 内容超出时滚动 */
+            transition: all 0.3s ease;
+        }
+        /* 侧边栏标题 */
+        .sidebar-title {
+            color: #ff6b9e;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 2px dashed #ffc2d1;
+            display: flex;
+            align-items: center;
+        }
+        .sidebar-title i {
+            margin-right: 10px;
+        }
+        /* 侧边栏链接 */
+        .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .sub-link {
+            display: flex;
+            align-items: center;
+            color: #ff8fab;
+            text-decoration: none;
+            font-size: 18px;
+            padding: 12px 15px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        .sub-link:hover {
+            background-color: rgba(255,194,209,0.3);
+            color: #ff6b9e;
+            transform: translateX(5px);
+        }
+        .sub-link i {
+            margin-right: 10px;
+        }
+
+        /* 主容器（调整左边距，避免被侧边栏遮挡） */
+        .container {
+            max-width: 1200px;
+            margin: 0 20px 0 260px; /* 左边距=侧边栏宽度+20px间距 */
+            padding: 40px 20px;
+            background-color: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(255,100,150,0.2);
+            margin-bottom: 50px;
+        }
+
+        /* 分类标题 */
+        .category-title {
+            color: #ff6b9e;
+            font-size: 24px;
+            margin-bottom: 30px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 3px dashed #ffc2d1;
+        }
+        .category-title .fa-heart {
+            color: #ff8fab;
+            margin-right: 15px;
+            animation: heartBeat 1.5s ease infinite;
+        }
+        @keyframes heartBeat {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); color: #ff6b9e; }
+            100% { transform: scale(1); }
+        }
+
+        /* 图片网格布局 */
+        .image-grid {
+            display: grid;
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+        .portrait-grid {
+            grid-template-columns: 1fr;
+        }
+        @media (min-width: 768px) {
+            .portrait-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (min-width: 1024px) {
+            .portrait-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        .landscape-grid {
+            grid-template-columns: 1fr;
+        }
+        @media (min-width: 768px) {
+            .landscape-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (min-width: 1024px) {
+            .landscape-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* 图片卡片 */
+        .image-item {
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 6px 20px rgba(255,100,150,0.15);
+            position: relative;
+            transition: all 0.5s ease;
+            border: 4px solid transparent;
+            background-clip: padding-box, border-box;
+            background-origin: padding-box, border-box;
+            background-image: linear-gradient(white, white), 
+                              linear-gradient(135deg, #ff9eb5, #ffc2d1, #ff9eb5);
+        }
+        .image-item:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 12px 30px rgba(255,60,120,0.3);
+            background-image: linear-gradient(white, white), 
+                              linear-gradient(135deg, #ff6b9e, #ff8fab, #ff6b9e);
+        }
+        .image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            opacity: 0;
+            animation: imgFadeIn 0.8s ease forwards;
+        }
+        @keyframes imgFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .image-num {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background-color: rgba(255,255,255,0.9);
+            color: #ff6b9e;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 5px 12px;
+            border-radius: 50px;
+            box-shadow: 0 2px 8px rgba(255,100,150,0.2);
+            z-index: 10;
+        }
+        .image-item::after {
+            content: "\f004";
+            font-family: "FontAwesome";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            color: rgba(255,255,255,0.8);
+            font-size: 60px;
+            text-shadow: 0 0 15px rgba(255,60,120,0.7);
+            transition: transform 0.3s ease;
+            z-index: 5;
+        }
+        .image-item:hover::after {
+            transform: translate(-50%, -50%) scale(1.2);
+            animation: heartPulse 0.5s ease;
+        }
+        @keyframes heartPulse {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            70% { transform: translate(-50%, -50%) scale(1.3); }
+            100% { transform: translate(-50%, -50%) scale(1.2); }
+        }
+
+        /* 页脚 */
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: #ff8fab;
+            font-size: 16px;
+            background-color: rgba(255,255,255,0.9);
+            border-top: 2px dashed #ffc2d1;
+            margin-left: 240px; /* 与侧边栏宽度一致，避免内容偏移 */
+        }
+        .footer .icons {
+            margin-bottom: 15px;
+        }
+        .footer .icons i {
+            font-size: 22px;
+            margin: 0 10px;
+            color: #ff9eb5;
+            transition: all 0.3s ease;
+        }
+        .footer .icons i:hover {
+            transform: rotate(15deg) scale(1.2);
+            color: #ff6b9e;
+        }
+
+        /* 滚动动画 */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .fade-in.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 响应式：小屏幕适配（隐藏侧边栏文字，缩小宽度） */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 80px;
+                padding: 25px 10px;
+            }
+            .sidebar-title span, .sub-link span {
+                display: none; /* 隐藏文字，只留图标 */
+            }
+            .sidebar-title, .sub-link {
+                justify-content: center; /* 图标居中 */
+            }
+            .sub-link i {
+                margin-right: 0;
+                font-size: 20px;
+            }
+            /* 调整主容器和页脚边距 */
+            .container {
+                margin-left: 100px; /* 侧边栏宽度+20px间距 */
+            }
+            .footer {
+                margin-left: 80px; /* 与侧边栏宽度一致 */
+            }
+        }
+        @media (max-width: 480px) {
+            .container {
+                margin-left: 90px;
+            }
+            .header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 悬浮爪印装饰 -->
+    <div class="paw-decor paw1"><i class="fa fa-paw"></i></div>
+    <div class="paw-decor paw2"><i class="fa fa-paw"></i></div>
+    <div class="paw-decor paw3"><i class="fa fa-paw"></i></div>
+    <div class="paw-decor paw4"><i class="fa fa-paw"></i></div>
+
+    <!-- 顶部导航栏 -->
+    <header class="header">
+        <div class="cat-ear"><i class="fa fa-ears"></i></div>
+        <h1>猫娘站</h1>
+        <div class="cat-ear"><i class="fa fa-ears"></i></div>
+    </header>
+
+    <!-- 新增：侧边栏导航 -->
+    <aside class="sidebar">
+        <div class="sidebar-title">
+            <i class="fa fa-paw" style="color: #ff6b9e;"></i>
+            <span>分类导航</span>
+        </div>
+        <div class="sidebar-menu">
+            <!-- 跳转至芙兰朵路子页面 -->
+            <a href="flan.html" class="sub-link">
+                <i class="fa fa-heart" style="color: #ff8fab;"></i>
+                <span>芙兰朵路专区</span>
+            </a>
+            <!-- 未来可添加其他子页面链接 -->
+        </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="container">
+        <!-- 竖屏图片区 -->
+        <section class="fade-in">
+            <h2 class="category-title"><i class="fa fa-heart"></i>竖屏猫娘图</h2>
+            <div class="image-grid portrait-grid">
+                <div class="image-item">
+                    <div class="image-num">No.2</div>
+                    <img src="2.png" alt="竖屏猫娘图2" onload="this.style.animationDelay = '0.1s'">
+                </div>
+                <div class="image-item">
+                    <div class="image-num">No.5</div>
+                    <img src="5.png" alt="竖屏猫娘图5" onload="this.style.animationDelay = '0.2s'">
+                </div>
+                <div class="image-item">
+                    <div class="image-num">No.6</div>
+                    <img src="6.png" alt="竖屏猫娘图6" onload="this.style.animationDelay = '0.3s'">
+                </div>
+                <div class="image-item">
+                    <div class="image-num">No.9</div>
+                    <img src="9.png" alt="竖屏猫娘图9" onload="this.style.animationDelay = '0.4s'">
+                </div>
+                <div class="image-item">
+                    <div class="image-num">No.10</div>
+                    <img src="10.png" alt="竖屏猫娘图10" onload="this.style.animationDelay = '0.5s'">
+                </div>
+            </div>
+        </section>
+
+        <!-- 横屏图片区 -->
+        <section class="fade-in">
+            <h2 class="category-title"><i class="fa fa-heart"></i>横屏猫娘图</h2>
+            <div class="image-grid landscape-grid">
+                <div class="image-item">
+                    <div class="image-num">No.1</div>
+                    <img src="1.png" alt="横屏猫娘图1" onload="this.style.animationDelay = '0.1s'">
+                </div>
+                <div class="image-item">
+                    <div class="image-num">No.3</div>
+                    <img src="3.png" alt="横屏猫娘图3" onload="this.style.animationDelay = '0.2s'">
+                </div>
+                <div class="image-item">
+                    <div class="image-num">No.4</div>
+                    <img src="4.png" alt="横屏猫娘图4" onload="this.style.animationDelay = '0.3s'">
+                </div>
+                <div class="image-item">
+                    <div class="image-num">No.7</div>
+                    <img src="7.png" alt="横屏猫娘图7" onload="this.style.animationDelay = '0.4s'">
+                </div>
+                <div class="image-item">
+                    <div class="image-num">No.8</div>
+                    <img src="8.png" alt="横屏猫娘图8" onload="this.style.animationDelay = '0.5s'">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="icons">
+            <i class="fa fa-paw"></i>
+            <i class="fa fa-heart"></i>
+            <i class="fa fa-ears"></i>
+            <i class="fa fa-heart"></i>
+            <i class="fa fa-paw"></i>
+        </div>
+        <p id="copyright">© 2025 - <span id="currentYear">2025</span> 猫娘站 - 所有图片仅供欣赏 | 萌系治愈 · 猫娘专属</p>
+    </footer>
+
+    <!-- 动态效果脚本 -->
+    <script>
+        // 自动更新版权年份
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentYearElement = document.getElementById('currentYear');
+            const currentYear = new Date().getFullYear();
+            currentYearElement.textContent = currentYear;
+        });
+
+        // 导航栏滚动变色 + 侧边栏滚动阴影
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.header');
+            const sidebar = document.querySelector('.sidebar');
+            // 导航栏样式
+            if (window.scrollY > 50) {
+                header.classList.add('scroll');
+                sidebar.style.boxShadow = '4px 0 25px rgba(255,60,120,0.25)'; // 滚动时侧边栏阴影加深
+            } else {
+                header.classList.remove('scroll');
+                sidebar.style.boxShadow = '4px 0 20px rgba(255,100,150,0.15)'; // 恢复默认阴影
+            }
+
+            // 滚动时元素渐入
+            const fadeElements = document.querySelectorAll('.fade-in');
+            fadeElements.forEach(element => {
+                const elementTop = element.getBoundingClientRect().top;
+                const windowHeight = window.innerHeight;
+                if (elementTop < windowHeight * 0.85) {
+                    element.classList.add('active');
+                }
+            });
+        });
+
+        // 页面加载时触发一次滚动监听
+        window.dispatchEvent(new Event('scroll'));
+    </script>
+</body>
 </html>

@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenGL 教程 - 喵娘站</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- AOS 动画库 -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#f472b6',
+                        dark: {
+                            100: '#1e293b',
+                            200: '#0f172a',
+                            300: '#020617'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            }
+            .glass {
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            .dark .glass {
+                background: rgba(15, 23, 42, 0.7);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            .code-block {
+                position: relative;
+                border-radius: 0.5rem;
+                overflow: hidden;
+            }
+            .code-block pre {
+                padding: 1rem;
+                overflow-x: auto;
+                font-family: 'Fira Code', monospace;
+                font-size: 0.9rem;
+                line-height: 1.6;
+            }
+            .code-block .copy-btn {
+                position: absolute;
+                top: 0.5rem;
+                right: 0.5rem;
+                opacity: 0;
+                transition: opacity 0.2s ease;
+            }
+            .code-block:hover .copy-btn {
+                opacity: 1;
+            }
+        }
+        
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        
+        /* 背景图片 */
+        body {
+            background-image: url('image/10.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+        
+        /* 代码高亮 */
+        .keyword { color: #c678dd; }
+        .type { color: #56b6c2; }
+        .string { color: #98c379; }
+        .comment { color: #5c6370; }
+        .function { color: #61afef; }
+        .variable { color: #e06c75; }
+        .constant { color: #d19a66; }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50 dark:bg-dark-200 text-gray-800 dark:text-gray-200 transition-colors duration-300">
+    <!-- 导航栏 -->
+    <nav class="glass sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <img src="image/icon.png" alt="喵娘站图标" class="w-10 h-10 rounded-full">
+                <span class="text-xl font-bold text-primary dark:text-secondary">喵娘站</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="index.html" class="nav-link">首页</a>
+                <a href="#" class="nav-link active">OpenGL教程</a>
+                <a href="music.html" class="nav-link">音乐</a>
+                <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-dark-100 transition-colors">
+                    <i class="fa fa-moon-o dark:hidden" aria-hidden="true"></i>
+                    <i class="fa fa-sun-o hidden dark:block text-yellow-400" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 标题区域 -->
+        <section class="mb-12 text-center" data-aos="fade-up">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 text-shadow text-black">OpenGL 教程</h1>
+            <p class="text-xl max-w-3xl mx-auto opacity-90 text-black">
+                从窗口创建到三角形绘制，一步步学习 OpenGL 渲染基础
+            </p>
+        </section>
+
+        <!-- 教程内容 -->
+        <section class="max-w-4xl mx-auto">
+            <!-- 教程导航 -->
+            <div class="glass rounded-xl p-6 mb-10" data-aos="fade-up">
+                <h2 class="text-2xl font-bold mb-4">教程目录</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <a href="#setup" class="tutorial-nav-item flex items-center p-3 rounded-lg hover:bg-white/20 transition-colors">
+                        <span class="w-8 h-8 rounded-full bg-primary flex items-center justify-center mr-3">1</span>
+                        <span>环境设置与窗口创建</span>
+                    </a>
+                    <a href="#shaders" class="tutorial-nav-item flex items-center p-3 rounded-lg hover:bg-white/20 transition-colors">
+                        <span class="w-8 h-8 rounded-full bg-primary flex items-center justify-center mr-3">2</span>
+                        <span>着色器编译与链接</span>
+                    </a>
+                    <a href="#buffers" class="tutorial-nav-item flex items-center p-3 rounded-lg hover:bg-white/20 transition-colors">
+                        <span class="w-8 h-8 rounded-full bg-primary flex items-center justify-center mr-3">3</span>
+                        <span>顶点缓冲对象(VBO)与顶点数组对象(VAO)</span>
+                    </a>
+                    <a href="#rendering" class="tutorial-nav-item flex items-center p-3 rounded-lg hover:bg-white/20 transition-colors">
+                        <span class="w-8 h-8 rounded-full bg-primary flex items-center justify-center mr-3">4</span>
+                        <span>渲染循环与三角形绘制</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 环境设置与窗口创建 -->
+            <div id="setup" class="glass rounded-xl p-8 mb-10" data-aos="fade-up">
+                <h2 class="text-3xl font-bold mb-6 flex items-center">
+                    <span class="w-10 h-10 rounded-full bg-primary flex items-center justify-center mr-3">1</span>
+                    环境设置与窗口创建
+                </h2>
+                
+                <p class="mb-6">
+                    在开始 OpenGL 编程之前，我们需要设置开发环境并创建一个窗口。我们将使用 GLFW 库来创建窗口和处理用户输入，使用 GLAD 来加载 OpenGL 函数指针。
+                </p>
+                
+                <h3 class="text-xl font-semibold mb-3">包含必要的头文件</h3>
+                <div class="code-block bg-gray-900 text-gray-100 mb-6">
+                    <pre><code><span class="preprocessor">#include &lt;glad/glad.h&gt;</span>
+<span class="preprocessor">#include &lt;GLFW/glfw3.h&gt;</span>
+<span class="preprocessor">#include &lt;iostream&gt;</span></code></pre>
+                    <button class="copy-btn bg-primary/80 hover:bg-primary text-white p-2 rounded-md transition-colors" onclick="copyCode(this)">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-3">窗口大小变化回调函数</h3>
+                <p class="mb-3">
+                    当窗口大小改变时，我们需要调整 OpenGL 的视口大小以匹配新的窗口尺寸：
+                </p>
+                <div class="code-block bg-gray-900 text-gray-100 mb-6">
+                    <pre><code><span class="comment">// 窗口大小变化时的回调函数</span>
+<span class="keyword">void</span> <span class="function">framebuffer_size_callback</span>(GLFWwindow* window, <span class="type">int</span> width, <span class="type">int</span> height) {
+    <span class="function">glViewport</span>(<span class="constant">0</span>, <span class="constant">0</span>, width, height); <span class="comment">// 设置视口大小</span>
+}</code></pre>
+                    <button class="copy-btn bg-primary/80 hover:bg-primary text-white p-2 rounded-md transition-colors" onclick="copyCode(this)">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-3">输入处理函数</h3>
+                <p class="mb-3">
+                    我们需要处理用户输入，例如按下 ESC 键关闭窗口：
+                </p>
+                <div class="code-block bg-gray-900 text-gray-100 mb-6">
+                    <pre><code><span class="comment">// 处理输入</span>
+<span class="keyword">void</span> <span class="function">processInput</span>(GLFWwindow* window) {
+    <span class="keyword">if</span> (<span class="function">glfwGetKey</span>(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        <span class="function">glfwSetWindowShouldClose</span>(window, <span class="keyword">true</span>); <span class="comment">// 按下ESC键关闭窗口</span>
+}</code></pre>
+                    <button class="copy-btn bg-primary/80 hover:bg-primary text-white p-2 rounded-md transition-colors" onclick="copyCode(this)">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-3">主函数 - 初始化 GLFW 和创建窗口</h3>
+                <p class="mb-3">
+                    在主函数中，我们初始化 GLFW，配置 OpenGL 版本，并创建一个窗口：
+                </p>
+                <div class="code-block bg-gray-900 text-gray-100 mb-6">
+                    <pre><code><span class="type">int</span> <span class="function">main</span>() {
+    <span class="comment">// 初始化GLFW</span>
+    <span class="function">glfwInit</span>();
+    <span class="comment">// 配置GLFW，指定OpenGL版本为3.3核心模式</span>
+    <span class="function">glfwWindowHint</span>(GLFW_CONTEXT_VERSION_MAJOR, <span class="constant">3</span>);
+    <span class="function">glfwWindowHint</span>(GLFW_CONTEXT_VERSION_MINOR, <span class="constant">3</span>);
+    <span class="function">glfwWindowHint</span>(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    <span class="comment">// 创建窗口</span>
+    GLFWwindow* window = <span class="function">glfwCreateWindow</span>(<span class="constant">800</span>, <span class="constant">600</span>, <span class="string">"OpenGL Triangle"</span>, <span class="keyword">NULL</span>, <span class="keyword">NULL</span>);
+    <span class="keyword">if</span> (window == <span class="keyword">NULL</span>) {
+        std::cout &lt;&lt; <span class="string">"Failed to create GLFW window"</span> &lt;&lt; std::endl;
+        <span class="function">glfwTerminate</span>();
+        <span class="keyword">return</span> <span class="constant">-1</span>;
+    }
+    <span class="function">glfwMakeContextCurrent</span>(window);
+    <span class="comment">// 设置窗口大小变化回调</span>
+    <span class="function">glfwSetFramebufferSizeCallback</span>(window, framebuffer_size_callback);
+
+    <span class="comment">// 初始化GLAD（加载OpenGL函数指针）</span>
+    <span class="keyword">if</span> (!<span class="function">gladLoadGLLoader</span>((GLADloadproc)<span class="function">glfwGetProcAddress</span>)) {
+        std::cout &lt;&lt; <span class="string">"Failed to initialize GLAD"</span> &lt;&lt; std::endl;
+        <span class="keyword">return</span> <span class="constant">-1</span>;
+    }</code></pre>
+                    <button class="copy-btn bg-primary/80 hover:bg-primary text-white p-2 rounded-md transition-colors" onclick="copyCode(this)">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+                
+                <div class="flex justify-center my-8">
+                </div>
+            </div>
+
+            <!-- 着色器编译与链接 -->
+            <div id="shaders" class="glass rounded-xl p-8 mb-10" data-aos="fade-up">
+                <h2 class="text-3xl font-bold mb-6 flex items-center">
+                    <span class="w-10 h-10 rounded-full bg-primary flex items-center justify-center mr-3">2</span>
+                    着色器编译与链接
+                </h2>
+                
+                <p class="mb-6">
+                    OpenGL 使用着色器程序来处理图形渲染。着色器是运行在 GPU 上的小程序，用于处理顶点和像素数据。我们需要创建顶点着色器和片段着色器，并将它们链接成一个着色器程序。
+                </p>
+                
+                <h3 class="text-xl font-semibold mb-3">顶点着色器源码</h3>
+                <p class="mb-3">
+                    顶点着色器负责处理顶点数据，将顶点坐标转换为裁剪空间坐标：
+                </p>
+                <div class="code-block bg-gray-900 text-gray-100 mb-6">
+                    <pre><code><span class="comment">// 顶点着色器源码</span>
+<span class="keyword">const</span> <span class="type">char</span>* vertexShaderSource = <span class="string">"#version 330 core\n"</span>
+    <span class="string">"layout (location = 0) in vec3 aPos;\n"</span>
+    <span class="string">"void main()\n"</span>
+    <span class="string>"{\n"</span>
+    <span class="string">"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"</span>
+    <span class="string>"}\0"</span>;</code></pre>
+                    <button class="copy-btn bg-primary/80 hover:bg-primary text-white p-2 rounded-md transition-colors" onclick="copyCode(this)">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-3">片段着色器源码</h3>
+                <p class="mb-3">
+                    片段着色器负责确定每个像素的颜色：
+                </p>
+                <div class="code-block bg-gray-900 text-gray-100 mb-6">
+                    <pre><code><span class="comment">// 片段着色器源码</span>
+<span class="keyword">const</span> <span class="type">char</span>* fragmentShaderSource = <span class="string">"#version 330 core\n"</span>
+    <span class="string">"out vec4 FragColor;\n"</span>
+    <span class="string">"void main()\n"</span>
+    <span class="string">"{\n"</span>
+    <span class="string">"   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"</span> <span class="comment">// 橙色</span>
+    <span class="string">"}\0"</span>;</code></pre>
+                    <button class="copy-btn bg-primary/80 hover:bg-primary text-white p-2 rounded-md transition-colors" onclick="copyCode(this)">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-3">编译顶点着色器</h3>
+                <p class="mb-3">
+                    创建顶点着色器对象，编译着色器源码，并检查编译错误：
+                </p>
+                <div class="code-block bg-gray-900 text-gray-100 mb-6">
+                    <pre><code><span class="comment">// ---------------------</span>
+<span class="comment">// 编译顶点着色器</span>
+<span class="comment">// ---------------------</span>
+<span class="type">unsigned</span> <span class="type">int</span> vertexShader = <span class="function">glCreateShader</span>(GL_VERTEX_SHADER);
+<span class="function">glShaderSource</span>(vertexShader, <span class="constant">1</span>, &amp;vertexShaderSource, <span class="keyword">NULL</span>);
+<span class="function">glCompileShader</span>(vertexShader);
+<span class="comment">// 检查着色器编译错误</span>
+<span class="type">int</span> success;
+<span class="type">char</span> infoLog[<span class="constant">512</span>];
+<span class="function">glGetShaderiv</span>(vertexShader, GL_COMPILE_STATUS, &amp;success);
+<span class="keyword">if</span> (!success) {
+    <span class="function">glGetShaderInfoLog</span>(vertexShader, <span class="constant">512</span>, <span class="keyword">NULL</span>, infoLog);
+    std::cout &lt;&lt; <span class="string">"Vertex shader compilation error:\n"</span> &lt;&lt; infoLog &lt;&lt; std::endl;
+}</code></pre>
+                    <button class="copy-btn bg-primary/80 hover:bg-primary text-white p-2 rounded-md transition-colors" onclick="copyCode(this)">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-3">编译片段着色器</h3>
+                <p class="mb-3">
+                    类似地，编译片段着色器：
+                </p>
+                <div class="code-block bg-gray-900 text-gray-100 mb-6">
+                    <pre><code><span class="comment">// ---------------------</span>
+<span class="comment">// 编译片段着色器</span>
+<span class="comment">// ---------------------</span>
+<span class="type">unsigned</span> <span class="type">int</span> fragmentShader = <span class="function">glCreateShader</span>(GL_FRAGMENT_SHADER);
+<span class="function">glShaderSource</span>(fragmentShader, <span class="constant">1</span>, &amp;fragmentShaderSource, <span class="keyword">NULL</span>);
+<span class="function">glCompileShader</span>(fragmentShader);
+<span class="comment">// 检查着色器编译错误</span>
+<span class="function">glGetShaderiv</span>(fragmentShader, GL_COMPILE_STATUS, &amp;success);
+<span class="keyword">if</span> (!success) {
+    <span class="function">glGetShaderInfoLog</span>(fragmentShader, <span class="constant">512</span>, <span class="keyword">NULL</span>, infoLog);
+    std::cout &lt;&lt; <span class="string">"Fragment shader compilation error:\n"</span> &lt;&lt; infoLog &lt;&lt; std::endl;
+}</code></pre>
+                    <button class="copy-btn bg-primary/80 hover:bg-primary text-white p-2 rounded-md transition-colors" onclick="copyCode(this)">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-3">链接着色器程序</h3>
+                <p class="mb-3">
+                    创建着色器程序对象，附加编译好的着色器，并链接它们：
+                </p>
+                <div class="code-block bg-gray-900 text-gray-100 mb-6">
+                    <pre><code><span class="comment">// ---------------------</span>
+<span class="comment">// 链接着色器程序</span>
+<span class="comment">// ---------------------</span>
+<span class="type">unsigned</span> <span class="type">int</span> shaderProgram = <span class="function">glCreateProgram</span>();
+<span class="function">glAttachShader</span>(shaderProgram, vertexShader);
+<span class="function">glAttachShader</span>(shaderProgram, fragmentShader);
+<span class="function">glLinkProgram</span>(shaderProgram);
+<span class="comment">// 检查程序链接错误</span>
+<span class="function">glGetProgramiv</span>(shaderProgram, GL_LINK_STATUS, &amp;success);
+<span class="keyword">if</span> (!success) {
+    <span class="function">glGetProgramInfoLog</span>(shaderProgram, <span class="constant">512</span>, <span class="keyword">NULL</span>, infoLog);
+    std::cout &lt;&lt; <span class="string">"Shader program linking error:\n"</span> &lt;&lt; infoLog &lt;&lt; std::endl;
+}
+<span class="comment">// 链接完成后删除着色器（不再需要）</span>
+<span class="function">glDeleteShader</span>(vertexShader);
+<span class="function">glDeleteShader</span>(fragmentShader);</code></pre>
+                    <button class="copy-btn bg-primary/80 hover:bg-primary text-white p-2 rounded-md transition-colors" onclick="copyCode(this)">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+                
+                <div class="flex justify-center my-8">
+                </div>
+            </div>
+
+            <!-- 顶点缓冲对象(VBO)与顶点数组对象(VAO) -->
+            <div id="buffers" class="glass rounded-xl p-8 mb-10" data-aos="fade-up">
+                <h2 class="text-3xl font-bold mb-6 flex items-center">
+                    <span class="w-10 h-10 rounded-full bg-primary flex items-center justify-center mr-3">3</span>
+                    顶点缓冲对象(VBO)与顶点数组对象(VAO)
+                </h2>
+                
+                <p class="mb-6">
+                    为了在 OpenGL 中绘制图形，我们需要将顶点数据发送到 GPU。顶点缓冲对象(VBO)用于存储顶点数据，而顶点数组对象(VAO)用于管理顶点属性配置。
+                </p>
+                
+                <h3 class="text-xl font-semibold mb-3">定义三角形顶点数据</h3>
+                <p class="mb-3">
+                    首先，我们定义一个三角形的顶点数据：
+                </p>
+                <div class="code-block bg-gray-900 text-gray-100 mb-6">
+                    <pre><code><span class="comment">// ---------------------</span>
+<span class="comment">// 定义三角形顶点数据</span>
+<span class="comment">// ---------------------</span>
+<span class="type">float</span> vertices[] = {
+    <span class="constant">-0.5f</span>, <span class="constant">-0.5f</span>, <span class="constant">0.0f</span>, <span class="comment">// 左下</span>
+     <span class="constant">0.5f</span>, <span class="constant">-0.5f</span>, <span class="constant">0.0f</span>, <span class="comment">// 右下</span>
+     <span class="constant">0.0f</span>,  <span class="constant">0.5f</span>, <span class="constant">0.0f</span>  <span class="comment">// 顶部</span>
+};</code></pre>
+                    <button class="copy-btn bg-primary/80 hover:bg-primary text-white p-2 rounded-md transition-colors" onclick="copyCode(this)">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-3">创建 VAO 和 VBO</h3>
+                <p class="mb-3">
+                    创建顶点数组对象(VAO)和顶点缓冲对象(VBO)：
+                </p>
+                <div class="code-block bg-gray-900 text-gray-100 mb-6">
+                    <pre><code><span class="comment">// ---------------------</span>
+<span class="comment">// 创建VAO和VBO</span>
+<span class="comment">// ---------------------</span>
+<span class="type">unsigned</span> <span class="type">int</span> VAO, VBO;
+<span class="function">glGenVertexArrays</span>(<span class="constant">1</span>, &amp;VAO);
+<span class="function">glGenBuffers</span>(<span class="constant">1</span>, &amp;VBO);</code></pre>
+                    <button class="copy-btn bg-primary/80 hover:bg-primary text-white p-2 rounded-md transition-colors" onclick="copyCode(this)">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-3">绑定 VAO 和 VBO 并配置顶点属性</h3>
+                <p class="mb-3">
+                    绑定 VAO 和 VBO，将顶点数据复制到 VBO，并配置顶点属性：
+                </p>
+                <div class="code-block bg-gray-900 text-gray-100 mb-6">
+                    <pre><code><span class="comment">// 绑定VAO（核心模式必须绑定VAO才能绘制）</span>
+<span class="function">glBindVertexArray</span>(VAO);
+
+<span class="comment">// 绑定VBO并复制顶点数据到缓冲区</span>
+<span class="function">glBindBuffer</span>(GL_ARRAY_BUFFER, VBO);
+<span class="function">glBufferData</span>(GL_ARRAY_BUFFER, <span class="keyword">sizeof</span>(vertices), vertices, GL_STATIC_DRAW);
+
+<span class="comment">// 配置顶点属性（位置信息）</span>
+<span class="function">glVertexAttribPointer</span>(<span class="constant">0</span>, <span class="constant">3</span>, GL_FLOAT, GL_FALSE, <span class="constant">3</span> * <span class="keyword">sizeof</span>(<span class="type">float</span>), (<span class="type">void</span>*)<span class="constant">0</span>);
+<span class="function">glEnableVertexAttribArray</span>(<span class="constant">0</span>); <span class="comment">// 启用顶点属性索引0</span>
+
+<span class="comment">// 解绑VBO和VAO（可选，方便后续操作）</span>
+<span class="function">glBindBuffer</span>(GL_ARRAY_BUFFER, <span class="constant">0</span>);
+<span class="function">glBindVertexArray</span>(<span class="constant">0</span>);</code></pre>
+                    <button class="copy-btn bg-primary/80 hover:bg-primary text-white p-2 rounded-md transition-colors" onclick="copyCode(this)">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+                
+                <div class="flex justify-center my-8">
+                </div>
+            </div>
+
+            <!-- 渲染循环与三角形绘制 -->
+            <div id="rendering" class="glass rounded-xl p-8 mb-10" data-aos="fade-up">
+                <h2 class="text-3xl font-bold mb-6 flex items-center">
+                    <span class="w-10 h-10 rounded-full bg-primary flex items-center justify-center mr-3">4</span>
+                    渲染循环与三角形绘制
+                </h2>
+                
+                <p class="mb-6">
+                    最后，我们创建一个渲染循环，在循环中处理输入、清除屏幕并绘制三角形。
+                </p>
+                
+                <h3 class="text-xl font-semibold mb-3">渲染循环</h3>
+                <p class="mb-3">
+                    渲染循环不断运行，直到用户关闭窗口：
+                </p>
+                <div class="code-block bg-gray-900 text-gray-100 mb-6">
+                    <pre><code><span class="comment">// ---------------------</span>
+<span class="comment">// 渲染循环</span>
+<span class="comment">// ---------------------</span>
+<span class="keyword">while</span> (!<span class="function">glfwWindowShouldClose</span>(window)) {
+    <span class="comment">// 处理输入</span>
+    <span class="function">processInput</span>(window);
+
+    <span class="comment">// 渲染指令</span>
+    <span class="function">glClearColor</span>(<span class="constant">0.2f</span>, <span class="constant">0.3f</span>, <span class="constant">0.3f</span>, <span class="constant">1.0f</span>); <span class="comment">// 背景色（深灰）</span>
+    <span class="function">glClear</span>(GL_COLOR_BUFFER_BIT);
+
+    <span class="comment">// 使用着色器程序</span>
+    <span class="function">glUseProgram</span>(shaderProgram);
+    <span class="comment">// 绑定VAO</span>
+    <span class="function">glBindVertexArray</span>(VAO);
+    <span class="comment">// 绘制三角形（3个顶点）</span>
+    <span class="function">glDrawArrays</span>(GL_TRIANGLES, <span class="constant">0</span>, <span class="constant">3</span>);
+
+    <span class="comment">// 交换缓冲并轮询事件</span>
+    <span class="function">glfwSwapBuffers</span>(window);
+    <span class="function">glfwPollEvents</span>;
+}</code></pre>
+                    <button class="copy-btn bg-primary/80 hover:bg-primary text-white p-2 rounded-md transition-colors" onclick="copyCode(this)">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-3">清理资源</h3>
+                <p class="mb-3">
+                    在程序结束前，清理所有创建的 OpenGL 资源：
+                </p>
+                <div class="code-block bg-gray-900 text-gray-100 mb-6">
+                    <pre><code><span class="comment">// 清理资源</span>
+<span class="function">glDeleteVertexArrays</span>(<span class="constant">1</span>, &amp;VAO);
+<span class="function">glDeleteBuffers</span>(<span class="constant">1</span>, &amp;VBO);
+<span class="function">glDeleteProgram</span>(shaderProgram);
+
+<span class="comment">// 终止GLFW</span>
+<span class="function">glfwTerminate</span>();
+<span class="keyword">return</span> <span class="constant">0</span>;
+}</code></pre>
+                    <button class="copy-btn bg-primary/80 hover:bg-primary text-white p-2 rounded-md transition-colors" onclick="copyCode(this)">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-3">完整代码</h3>
+                <p class="mb-3">
+                    以下是完整的 OpenGL 三角形绘制代码：
+                </p>
+                <div class="code-block bg-gray-900 text-gray-100 mb-6">
+                    <pre><code><span class="preprocessor">#include &lt;glad/glad.h&gt;</span>
+<span class="preprocessor">#include &lt;GLFW/glfw3.h&gt;</span>
+<span class="preprocessor">#include &lt;iostream&gt;</span>
+
+<span class="comment">// 窗口大小变化时的回调函数</span>
+<span class="keyword">void</span> <span class="function">framebuffer_size_callback</span>(GLFWwindow* window, <span class="type">int</span> width, <span class="type">int</span> height) {
+    <span class="function">glViewport</span>(<span class="constant">0</span>, <span class="constant">0</span>, width, height); <span class="comment">// 设置视口大小</span>
+}
+
+<span class="comment">// 处理输入</span>
+<span class="keyword">void</span> <span class="function">processInput</span>(GLFWwindow* window) {
+    <span class="keyword">if</span> (<span class="function">glfwGetKey</span>(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        <span class="function">glfwSetWindowShouldClose</span>(window, <span class="keyword">true</span>); <span class="comment">// 按下ESC键关闭窗口</span>
+}
+
+<span class="comment">// 顶点着色器源码</span>
+<span class="keyword">const</span> <span class="type">char</span>* vertexShaderSource = <span class="string">"#version 330 core\n"</span>
+    <span class="string">"layout (location = 0) in vec3 aPos;\n"</span>
+    <span class="string">"void main()\n"</span>
+    <span class="string">"{\n"</span>
+    <span class="string">"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"</span>
+    <span class="string">"}\0"</span>;
+
+<span class="comment">// 片段着色器源码</span>
+<span class="keyword">const</span> <span class="type">char</span>* fragmentShaderSource = <span class="string">"#version 330 core\n"</span>
+    <span class="string">"out vec4 FragColor;\n"</span>
+    <span class="string">"void main()\n"</span>
+    <span class="string">"{\n"</span>
+    <span class="string">"   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"</span> <span class="comment">// 橙色</span>
+    <span class="string">"}\0"</span>;
+
+<span class="type">int</span> <span class="function">main</span>() {
+    <span class="comment">// 初始化GLFW</span>
+    <span class="function">glfwInit</span>();
+    <span class="comment">// 配置GLFW，指定OpenGL版本为3.3核心模式</span>
+    <span class="function">glfwWindowHint</span>(GLFW_CONTEXT_VERSION_MAJOR, <span class="constant">3</span>);
+    <span class="function">glfwWindowHint</span>(GLFW_CONTEXT_VERSION_MINOR, <span class="constant">3</span>);
+    <span class="function">glfwWindowHint</span>(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    <span class="comment">// 创建窗口</span>
+    GLFWwindow* window = <span class="function">glfwCreateWindow</span>(<span class="constant">800</span>, <span class="constant">600</span>, <span class="string">"OpenGL Triangle"</span>, <span class="keyword">NULL</span>, <span class="keyword">NULL</span>);
+    <span class="keyword">if</span> (window == <span class="keyword">NULL</span>) {
+        std::cout &lt;&lt; <span class="string">"Failed to create GLFW window"</span> &lt;&lt; std::endl;
+        <span class="function">glfwTerminate</span>();
+        <span class="keyword">return</span> <span class="constant">-1</span>;
+    }
+    <span class="function">glfwMakeContextCurrent</span>(window);
+    <span class="comment">// 设置窗口大小变化回调</span>
+    <span class="function">glfwSetFramebufferSizeCallback</span>(window, framebuffer_size_callback);
+
+    <span class="comment">// 初始化GLAD（加载OpenGL函数指针）</span>
+    <span class="keyword">if</span> (!<span class="function">gladLoadGLLoader</span>((GLADloadproc)<span class="function">glfwGetProcAddress</span>)) {
+        std::cout &lt;&lt; <span class="string">"Failed to initialize GLAD"</span> &lt;&lt; std::endl;
+        <span class="keyword">return</span> <span class="constant">-1</span>;
+    }
+
+    <span class="comment">// ---------------------</span>
+    <span class="comment">// 编译顶点着色器</span>
+    <span class="comment">// ---------------------</span>
+    <span class="type">unsigned</span> <span class="type">int</span> vertexShader = <span class="function">glCreateShader</span>(GL_VERTEX_SHADER);
+    <span class="function">glShaderSource</span>(vertexShader, <span class="constant">1</span>, &amp;vertexShaderSource, <span class="keyword">NULL</span>);
+    <span class="function">glCompileShader</span>(vertexShader);
+    <span class="comment">// 检查着色器编译错误</span>
+    <span class="type">int</span> success;
+    <span class="type">char</span> infoLog[<span class="constant">512</span>];
+    <span class="function">glGetShaderiv</span>(vertexShader, GL_COMPILE_STATUS, &amp;success);
+    <span class="keyword">if</span> (!success) {
+        <span class="function">glGetShaderInfoLog</span>(vertexShader, <span class="constant">512</span>, <span class="keyword">NULL</span>, infoLog);
+        std::cout &lt;&lt; <span class="string">"Vertex shader compilation error:\n"</span> &lt;&lt; infoLog &lt;&lt; std::endl;
+    }
+
+    <span class="comment">// ---------------------</span>
+    <span class="comment">// 编译片段着色器</span>
+    <span class="comment">// ---------------------</span>
+    <span class="type">unsigned</span> <span class="type">int</span> fragmentShader = <span class="function">glCreateShader</span>(GL_FRAGMENT_SHADER);
+    <span class="function">glShaderSource</span>(fragmentShader, <span class="constant">1</span>, &amp;fragmentShaderSource, <span class="keyword">NULL</span>);
+    <span class="function">glCompileShader</span>(fragmentShader);
+    <span class="comment">// 检查着色器编译错误</span>
+    <span class="function">glGetShaderiv</span>(fragmentShader, GL_COMPILE_STATUS, &amp;success);
+    <span class="keyword">if</span> (!success) {
+        <span class="function">glGetShaderInfoLog</span>(fragmentShader, <span class="constant">512</span>, <span class="keyword">NULL</span>, infoLog);
+        std::cout &lt;&lt; <span class="string">"Fragment shader compilation error:\n"</span> &lt;&lt; infoLog &lt;&lt; std::endl;
+    }
+
+    <span class="comment">// ---------------------</span>
+    <span class="comment">// 链接着色器程序</span>
+    <span class="comment">// ---------------------</span>
+    <span class="type">unsigned</span> <span class="type">int</span> shaderProgram = <span class="function">glCreateProgram</span>();
+    <span class="function">glAttachShader</span>(shaderProgram, vertexShader);
+    <span class="function">glAttachShader</span>(shaderProgram, fragmentShader);
+    <span class="function">glLinkProgram</span>(shaderProgram);
+    <span class="comment">// 检查程序链接错误</span>
+    <span class="function">glGetProgramiv</span>(shaderProgram, GL_LINK_STATUS, &amp;success);
+    <span class="keyword">if</span> (!success) {
+        <span class="function">glGetProgramInfoLog</span>(shaderProgram, <span class="constant">512</span>, <span class="keyword">NULL</span>, infoLog);
+        std::cout &lt;&lt; <span class="string">"Shader program linking error:\n"</span> &lt;&lt; infoLog &lt;&lt; std::endl;
+    }
+    <span class="comment">// 链接完成后删除着色器（不再需要）</span>
+    <span class="function">glDeleteShader</span>(vertexShader);
+    <span class="function">glDeleteShader</span>(fragmentShader);
+
+    <span class="comment">// ---------------------</span>
+    <span class="comment">// 定义三角形顶点数据</span>
+    <span class="comment">// ---------------------</span>
+    <span class="type">float</span> vertices[] = {
+        <span class="constant">-0.5f</span>, <span class="constant">-0.5f</span>, <span class="constant">0.0f</span>, <span class="comment">// 左下</span>
+         <span class="constant">0.5f</span>, <span class="constant">-0.5f</span>, <span class="constant">0.0f</span>, <span class="comment">// 右下</span>
+         <span class="constant">0.0f</span>,  <span class="constant">0.5f</span>, <span class="constant">0.0f</span>  <span class="comment">// 顶部</span>
+    };
+
+    <span class="comment">// ---------------------</span>
+    <span class="comment">// 创建VAO和VBO</span>
+    <span class="comment">// ---------------------</span>
+    <span class="type">unsigned</span> <span class="type">int</span> VAO, VBO;
+    <span class="function">glGenVertexArrays</span>(<span class="constant">1</span>, &amp;VAO);
+    <span class="function">glGenBuffers</span>(<span class="constant">1</span>, &amp;VBO);
+
+    <span class="comment">// 绑定VAO（核心模式必须绑定VAO才能绘制）</span>
+    <span class="function">glBindVertexArray</span>(VAO);
+
+    <span class="comment">// 绑定VBO并复制顶点数据到缓冲区</span>
+    <span class="function">glBindBuffer</span>(GL_ARRAY_BUFFER, VBO);
+    <span class="function">glBufferData</span>(GL_ARRAY_BUFFER, <span class="keyword">sizeof</span>(vertices), vertices, GL_STATIC_DRAW);
+
+    <span class="comment">// 配置顶点属性（位置信息）</span>
+    <span class="function">glVertexAttribPointer</span>(<span class="constant">0</span>, <span class="constant">3</span>, GL_FLOAT, GL_FALSE, <span class="constant">3</span> * <span class="keyword">sizeof</span>(<span class="type">float</span>), (<span class="type">void</span>*)<span class="constant">0</span>);
+    <span class="function">glEnableVertexAttribArray</span>(<span class="constant">0</span>); <span class="comment">// 启用顶点属性索引0</span>
+
+    <span class="comment">// 解绑VBO和VAO（可选，方便后续操作）</span>
+    <span class="function">glBindBuffer</span>(GL_ARRAY_BUFFER, <span class="constant">0</span>);
+    <span class="function">glBindVertexArray</span>(<span class="constant">0</span>);
+
+    <span class="comment">// ---------------------</span>
+    <span class="comment">// 渲染循环</span>
+    <span class="comment">// ---------------------</span>
+    <span class="keyword">while</span> (!<span class="function">glfwWindowShouldClose</span>(window)) {
+        <span class="comment">// 处理输入</span>
+        <span class="function">processInput</span>(window);
+
+        <span class="comment">// 渲染指令</span>
+        <span class="function">glClearColor</span>(<span class="constant">0.2f</span>, <span class="constant">0.3f</span>, <span class="constant">0.3f</span>, <span class="constant">1.0f</span>); <span class="comment">// 背景色（深灰）</span>
+        <span class="function">glClear</span>(GL_COLOR_BUFFER_BIT);
+
+        <span class="comment">// 使用着色器程序</span>
+        <span class="function">glUseProgram</span>(shaderProgram);
+        <span class="comment">// 绑定VAO</span>
+        <span class="function">glBindVertexArray</span>(VAO);
+        <span class="comment">// 绘制三角形（3个顶点）</span>
+        <span class="function">glDrawArrays</span>(GL_TRIANGLES, <span class="constant">0</span>, <span class="constant">3</span>);
+
+        <span class="comment">// 交换缓冲并轮询事件</span>
+        <span class="function">glfwSwapBuffers</span>(window);
+        <span class="function">glfwPollEvents</span>();
+    }
+
+    <span class="comment">// 清理资源</span>
+    <span class="function">glDeleteVertexArrays</span>(<span class="constant">1</span>, &amp;VAO);
+    <span class="function">glDeleteBuffers</span>(<span class="constant">1</span>, &amp;VBO);
+    <span class="function">glDeleteProgram</span>(shaderProgram);
+
+    <span class="comment">// 终止GLFW</span>
+    <span class="function">glfwTerminate</span>();
+    <span class="keyword">return</span> <span class="constant">0</span>;
+}</code></pre>
+                    <button class="copy-btn bg-primary/80 hover:bg-primary text-white p-2 rounded-md transition-colors" onclick="copyCode(this)">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+                
+                <div class="flex justify-center my-8">
+                </div>
+                
+                <div class="bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg p-6">
+                    <h3 class="text-xl font-semibold mb-3 text-green-800 dark:text-green-300">恭喜！</h3>
+                    <p class="text-green-700 dark:text-green-400">
+                        你已经成功完成了 OpenGL 基础教程。现在你可以：
+                    </p>
+                    <ul class="list-disc list-inside mt-3 space-y-2 text-green-700 dark:text-green-400">
+                        <li>尝试修改三角形的颜色</li>
+                        <li>添加更多顶点来绘制其他形状</li>
+                        <li>学习纹理映射和光照效果</li>
+                        <li>探索更高级的 OpenGL 功能</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="glass py-6">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-gray-600 dark:text-gray-400">
+                © 2025 喵娘站 | C++/OpenGL/GLFW 渲染演示
+            </p>
+            <p class="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                本网站仅供学习和演示使用，图片仅供观赏
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // 初始化 AOS 动画库
+        document.addEventListener('DOMContentLoaded', function() {
+            AOS.init({
+                duration: 800,
+                easing: 'ease-in-out',
+                once: true
+            });
+            
+            // 检查深色模式偏好
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            
+            // 主题切换按钮
+            const themeToggle = document.getElementById('theme-toggle');
+            themeToggle.addEventListener('click', function() {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.theme = 'light';
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.theme = 'dark';
+                }
+            });
+            
+            // 导航链接样式
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.classList.add('px-3', 'py-2', 'rounded-md', 'text-sm', 'font-medium', 'hover:bg-gray-200', 'dark:hover:bg-dark-100', 'transition-colors');
+                
+                // 高亮当前页面链接
+                if (link.getAttribute('href') === window.location.pathname) {
+                    link.classList.add('bg-primary/20', 'text-primary', 'dark:bg-secondary/20', 'dark:text-secondary');
+                }
+            });
+            
+            // 教程导航项样式
+            const tutorialNavItems = document.querySelectorAll('.tutorial-nav-item');
+            tutorialNavItems.forEach(item => {
+                item.classList.add('transition-colors');
+            });
+            
+            // 代码块复制功能
+            window.copyCode = function(button) {
+                const codeBlock = button.parentElement;
+                const code = codeBlock.querySelector('code').innerText;
+                
+                navigator.clipboard.writeText(code).then(() => {
+                    const originalIcon = button.innerHTML;
+                    button.innerHTML = '<i class="fa fa-check"></i>';
+                    button.classList.add('bg-green-500');
+                    
+                    setTimeout(() => {
+                        button.innerHTML = originalIcon;
+                        button.classList.remove('bg-green-500');
+                    }, 2000);
+                });
+            };
+        });
+    </script>
+</body>
+</html>

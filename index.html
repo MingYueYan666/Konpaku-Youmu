@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>喵娘站 - C++/OpenGL/GLFW 渲染演示</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- AOS 动画库 -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#f472b6',
+                        dark: {
+                            100: '#1e293b',
+                            200: '#0f172a',
+                            300: '#020617'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            }
+            .glass {
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            .dark .glass {
+                background: rgba(15, 23, 42, 0.7);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+        }
+        
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        
+        /* 背景图片 */
+        body {
+            background-image: url('image/2.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+        
+        /* 卡片悬停效果 */
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50 dark:bg-dark-200 text-gray-800 dark:text-gray-200 transition-colors duration-300">
+    <!-- 导航栏 -->
+    <nav class="glass sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <img src="image/icon.png" alt="喵娘站图标" class="w-10 h-10 rounded-full">
+                <span class="text-xl font-bold text-primary dark:text-secondary">喵娘站</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="#" class="nav-link active">首页</a>
+                <a href="opengl-tutorial.html" class="nav-link">OpenGL教程</a>
+                <a href="music.html" class="nav-link">音乐</a>
+                <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-dark-100 transition-colors">
+                    <i class="fa fa-moon-o dark:hidden" aria-hidden="true"></i>
+                    <i class="fa fa-sun-o hidden dark:block text-yellow-400" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 欢迎区域 -->
+        <section class="mb-12 text-center" data-aos="fade-up">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 text-shadow text-black">欢迎来到喵娘站</h1>
+            <p class="text-xl max-w-2xl mx-auto opacity-90 text-black">
+                这里是一个使用 C++/OpenGL/GLFW 渲染技术的演示网站，
+                展示如何创建精美视觉效果和交互体验。
+            </p>
+        </section>
+
+        <!-- 技术介绍卡片 -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+            <!-- C++ 卡片 -->
+            <div class="glass rounded-xl p-6 card-hover" data-aos="fade-up" data-aos-delay="100">
+                <div class="flex justify-center mb-4">
+                    <img src="image/C++.png" alt="C++ Logo" class="h-24">
+                </div>
+                <h2 class="text-2xl font-bold mb-3 text-center">C++</h2>
+                <p class="text-gray-700 dark:text-gray-300">
+                    C++ 是一种高性能的系统级编程语言，广泛用于游戏开发、图形渲染和高性能计算。
+                    它提供了直接的硬件访问能力和强大的抽象机制，是 OpenGL 编程的理想选择。
+                </p>
+            </div>
+
+            <!-- OpenGL 卡片 -->
+            <div class="glass rounded-xl p-6 card-hover" data-aos="fade-up" data-aos-delay="200">
+                <div class="flex justify-center mb-4">
+                    <img src="image/OpenGL.png" alt="OpenGL Logo" class="h-24">
+                </div>
+                <h2 class="text-2xl font-bold mb-3 text-center">OpenGL</h2>
+                <p class="text-gray-700 dark:text-gray-300">
+                    OpenGL 是一个跨平台的图形渲染 API，用于在计算机上生成 2D 和 3D 图形。
+                    它提供了一套函数接口，允许开发者直接操作图形硬件，实现高性能的图形渲染。
+                </p>
+            </div>
+
+            <!-- GLFW 卡片 -->
+            <div class="glass rounded-xl p-6 card-hover" data-aos="fade-up" data-aos-delay="300">
+                <div class="flex justify-center mb-4">
+                    <div class="w-24 h-24 bg-gray-200 dark:bg-dark-100 rounded-lg flex items-center justify-center">
+                        <span class="text-4xl font-bold text-primary">GLFW</span>
+                    </div>
+                </div>
+                <h2 class="text-2xl font-bold mb-3 text-center">GLFW</h2>
+                <p class="text-gray-700 dark:text-gray-300">
+                    GLFW 是一个轻量级的跨平台库，用于创建窗口、处理输入和管理 OpenGL 上下文。
+                    它简化了 OpenGL 应用程序的开发过程，提供了一致的接口 across different operating systems.
+                </p>
+            </div>
+        </section>
+
+        <!-- 功能入口区域 -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+            <!-- OpenGL 教程入口 -->
+            <div class="glass rounded-xl overflow-hidden card-hover" data-aos="fade-right">
+                <div class="relative h-48 overflow-hidden">
+                    <img src="image/5.png" alt="OpenGL 教程" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
+                        <h2 class="text-2xl font-bold p-4 text-white">OpenGL 教程</h2>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <p class="mb-4 text-gray-700 dark:text-gray-300">
+                        学习如何使用 OpenGL 创建基本图形，从窗口创建到三角形绘制的完整教程。
+                    </p>
+                    <a href="opengl-tutorial.html" class="inline-block bg-primary hover:bg-primary/80 text-white font-medium py-2 px-6 rounded-lg transition-colors">
+                        开始学习 <i class="fa fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 音乐页面入口 -->
+            <div class="glass rounded-xl overflow-hidden card-hover" data-aos="fade-left">
+                <div class="relative h-48 overflow-hidden">
+                    <img src="image/6.png" alt="音乐页面" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
+                        <h2 class="text-2xl font-bold p-4 text-white">音乐欣赏</h2>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <p class="mb-4 text-gray-700 dark:text-gray-300">
+                        聆听精选音乐，体验网页音频播放功能。
+                    </p>
+                    <a href="music.html" class="inline-block bg-secondary hover:bg-secondary/80 text-white font-medium py-2 px-6 rounded-lg transition-colors">
+                        进入音乐室 <i class="fa fa-music ml-2"></i>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- 音乐播放：world.execute(me) -->
+        <section class="glass rounded-xl p-8 mb-16" data-aos="zoom-in">
+            <div class="flex flex-col md:flex-row items-center">
+                <div class="md:w-1/2 mb-6 md:mb-0 md:pr-8">
+                    <h2 class="text-3xl font-bold mb-4">音乐播放：world.execute(me)</h2>
+                    <p class="text-gray-700 dark:text-gray-300 mb-6">
+                        if(you){isTheWorld}
+                    </p>
+                    <a href="web/world.execute.html" class="inline-block bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-6 rounded-lg transition-colors">
+                        开始模拟 <i class="fa fa-play ml-2"></i>
+                    </a>
+                </div>
+                
+            </div>
+        </section>
+
+        <!-- 图片展示区 -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold mb-8 text-center text-black" data-aos="fade-up">喵娘画廊</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <img src="image/1.png" alt="喵娘图片" class="rounded-lg shadow-md w-full h-auto object-cover" data-aos="fade-up" data-aos-delay="100">
+                <img src="image/3.png" alt="喵娘图片" class="rounded-lg shadow-md w-full h-auto object-cover" data-aos="fade-up" data-aos-delay="200">
+                <img src="image/4.png" alt="喵娘图片" class="rounded-lg shadow-md w-full h-auto object-cover" data-aos="fade-up" data-aos-delay="300">
+                <img src="image/7.png" alt="喵娘图片" class="rounded-lg shadow-md w-full h-auto object-cover" data-aos="fade-up" data-aos-delay="400">
+                <img src="image/8.png" alt="喵娘图片" class="rounded-lg shadow-md w-full h-auto object-cover" data-aos="fade-up" data-aos-delay="500">
+                <img src="image/10.png" alt="喵娘图片" class="rounded-lg shadow-md w-full h-auto object-cover" data-aos="fade-up" data-aos-delay="600">
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="glass py-6">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-gray-600 dark:text-gray-400">
+                © 2025 喵娘站 | C++/OpenGL/GLFW 渲染演示
+            </p>
+            <p class="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                本网站仅供学习和演示使用，图片仅供观赏
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // 初始化 AOS 动画库
+        document.addEventListener('DOMContentLoaded', function() {
+            AOS.init({
+                duration: 800,
+                easing: 'ease-in-out',
+                once: true
+            });
+            
+            // 检查深色模式偏好
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            
+            // 主题切换按钮
+            const themeToggle = document.getElementById('theme-toggle');
+            themeToggle.addEventListener('click', function() {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.theme = 'light';
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.theme = 'dark';
+                }
+            });
+            
+            // 导航链接样式
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.classList.add('px-3', 'py-2', 'rounded-md', 'text-sm', 'font-medium', 'hover:bg-gray-200', 'dark:hover:bg-dark-100', 'transition-colors');
+                
+                // 高亮当前页面链接
+                if (link.getAttribute('href') === window.location.pathname) {
+                    link.classList.add('bg-primary/20', 'text-primary', 'dark:bg-secondary/20', 'dark:text-secondary');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

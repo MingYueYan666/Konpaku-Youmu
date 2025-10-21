@@ -335,8 +335,8 @@
         const AUTO_LOAD_PLAYLIST_IDS = [
             '9952193477',
             '8697968653',  // 森永真由美（已验证有效）
-            '13447929909',  // 云音乐热歌榜（公开歌单）
             '13965546585', // 经典华语（公开歌单）
+            '13447929909'  // 云音乐热歌榜（公开歌单）
         ];
         // 使用Meting API获取歌单（已验证该API格式）
         const METING_API = 'https://api.injahow.cn/meting/?server=netease&type=playlist&id=';
@@ -652,15 +652,7 @@
                     title: song.name || '未知歌曲',
                     artist: song.artist || '未知歌手',
                     album: song.album || '未知专辑',
-                    // 在转换歌曲数据格式的代码段中，将coverUrl的处理修改为：
-                    coverUrl: song.pic ?
-                        // 1. 强制HTTPS（避免混合内容报错） 2. 删除所有查询参数（不管是什么参数）
-                        song.pic
-                            .replace(/^http:/, 'https:')  // 修复协议
-                            .replace(/\?.*$/, '')         // 删除所有?及后面的内容
-                        :
-                        // 你的高清默认封面（已正确替换）
-                        'https://p1.music.126.net/LMJ_Ml3wkdYYhC9Iek-kvw==/109951164945881971.jpg',
+                    coverUrl: song.pic || 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg',
                     src: songId ? `${SONG_PLAY_URL}${songId}` : '',
                     duration: duration,
                     playlistName: playlistName,

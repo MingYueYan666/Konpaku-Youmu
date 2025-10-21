@@ -652,7 +652,12 @@
                     title: song.name || '未知歌曲',
                     artist: song.artist || '未知歌手',
                     album: song.album || '未知专辑',
-                    coverUrl: song.pic || 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg',
+                    // 在转换歌曲数据格式的代码段中，将coverUrl的处理修改为：
+                    coverUrl: song.pic ?
+                        // 替换URL中的尺寸参数为1000x1000以获取高清封面
+                        song.pic.replace(/\?param=.*/, '?param=1000x1000') :
+                        // 高清默认封面
+                        'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/109951168644335785.jpg',
                     src: songId ? `${SONG_PLAY_URL}${songId}` : '',
                     duration: duration,
                     playlistName: playlistName,

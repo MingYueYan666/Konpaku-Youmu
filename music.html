@@ -654,9 +654,12 @@
                     album: song.album || '未知专辑',
                     // 在转换歌曲数据格式的代码段中，将coverUrl的处理修改为：
                     coverUrl: song.pic ?
-                        // 替换URL中的尺寸参数为1000x1000以获取高清封面
-                        song.pic.replace(/\?param=.*/, '?param=1000x1000') :
-                        // 高清默认封面
+                        // 1. 强制HTTPS（避免混合内容报错） 2. 删除所有查询参数（不管是什么参数）
+                        song.pic
+                            .replace(/^http:/, 'https:')  // 修复协议
+                            .replace(/\?.*$/, '')         // 删除所有?及后面的内容
+                        :
+                        // 你的高清默认封面（已正确替换）
                         'https://p1.music.126.net/LMJ_Ml3wkdYYhC9Iek-kvw==/109951164945881971.jpg',
                     src: songId ? `${SONG_PLAY_URL}${songId}` : '',
                     duration: duration,

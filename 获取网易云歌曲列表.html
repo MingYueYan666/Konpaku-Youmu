@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>森永真由美 - 歌单</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#C20C0C', // 网易云红色
+                        secondary: '#181818',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .song-card-hover {
+                @apply transition-all duration-300 hover:bg-gray-100 hover:shadow-md;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800 min-h-screen">
+    <!-- 顶部导航 -->
+    <nav class="bg-white shadow-sm fixed top-0 left-0 right-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-music text-primary text-2xl"></i>
+                <span class="text-xl font-bold">网易云歌单</span>
+            </div>
+            <div class="text-sm text-gray-500">
+                <i class="fa fa-user-o mr-1"></i> 森永真由美 歌曲集
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 pt-24 pb-16">
+        <!-- 加载状态 -->
+        <div id="loading" class="flex flex-col items-center justify-center py-20">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            <p class="mt-4 text-gray-600">正在加载歌曲数据...</p>
+        </div>
+
+        <!-- 错误状态 -->
+        <div id="error" class="hidden flex-col items-center justify-center py-20 text-center">
+            <i class="fa fa-exclamation-circle text-4xl text-red-500 mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">加载失败</h3>
+            <p id="error-message" class="text-gray-600 mb-4">无法获取歌曲数据，请稍后重试</p>
+            <div class="mb-4 text-sm text-gray-500 max-w-md" id="error-details"></div>
+            <button id="retry-btn" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md transition-colors">
+                重试
+            </button>
+        </div>
+
+        <!-- 歌曲列表 -->
+        <div id="song-list" class="hidden bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="bg-gray-100 px-6 py-3 flex items-center border-b border-gray-200">
+                <h2 class="text-lg font-bold text-gray-800">
+                    <i class="fa fa-list-ul text-primary mr-2"></i>森永真由美 歌曲列表
+                </h2>
+                <span id="song-count" class="ml-3 text-sm text-gray-500"></span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-50 text-left text-gray-600 text-sm">
+                            <th class="px-6 py-3 w-12 text-center">#</th>
+                            <th class="px-6 py-3">歌曲</th>
+                            <th class="px-6 py-3 hidden md:table-cell">歌手</th>
+                            <th class="px-6 py-3 w-24 text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="songs-container">
+                        <!-- 歌曲将通过JS动态添加 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-secondary text-white py-6">
+        <div class="container mx-auto px-4 text-center text-sm text-gray-400">
+            <p>数据来源于网易云音乐 API（通过Meting API代理）</p>
+            <p class="mt-1">本页面仅用于展示，请勿用于商业用途</p>
+        </div>
+    </footer>
+
+    <script>
+        // 实际返回格式：直接返回歌曲数组，包含name/artist/url/pic/lrc等字段
+        const PLAYLIST_ID = '8697968653';
+        const METING_API = `https://api.injahow.cn/meting/?type=playlist&id=${PLAYLIST_ID}`;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // 获取DOM元素
+            const loadingEl = document.getElementById('loading');
+            const errorEl = document.getElementById('error');
+            const errorMessageEl = document.getElementById('error-message');
+            const errorDetailsEl = document.getElementById('error-details');
+            const songListEl = document.getElementById('song-list');
+            const songsContainer = document.getElementById('songs-container');
+            const songCountEl = document.getElementById('song-count');
+            const retryBtn = document.getElementById('retry-btn');
+            
+            // 重试按钮事件
+            retryBtn.addEventListener('click', fetchSongData);
+            
+            // 初始加载
+            fetchSongData();
+            
+            // 从API获取歌曲数据
+            async function fetchSongData() {
+                try {
+                    // 显示加载状态
+                    loadingEl.classList.remove('hidden');
+                    errorEl.classList.add('hidden');
+                    songListEl.classList.add('hidden');
+                    
+                    // 调用API
+                    const response = await fetch(METING_API);
+                    
+                    if (!response.ok) {
+                        throw new Error(`请求失败，状态码: ${response.status}`);
+                    }
+                    
+                    const songs = await response.json();
+                    
+                    // 验证数据格式
+                    if (!Array.isArray(songs) || songs.length === 0) {
+                        throw new Error('返回数据不是有效的歌曲数组');
+                    }
+                    
+                    // 渲染歌曲列表
+                    renderSongList(songs);
+                    
+                    // 更新歌曲数量
+                    songCountEl.textContent = `共 ${songs.length} 首歌曲`;
+                    
+                    // 显示内容
+                    loadingEl.classList.add('hidden');
+                    songListEl.classList.remove('hidden');
+                    
+                } catch (error) {
+                    console.error('加载失败:', error);
+                    // 显示错误状态
+                    loadingEl.classList.add('hidden');
+                    errorEl.classList.remove('hidden');
+                    errorMessageEl.textContent = '获取歌曲数据失败';
+                    errorDetailsEl.textContent = `错误原因: ${error.message}`;
+                }
+            }
+            
+            // 渲染歌曲列表
+            function renderSongList(songs) {
+                songsContainer.innerHTML = '';
+                
+                songs.forEach((song, index) => {
+                    // 从url中提取歌曲ID（格式：...id=歌曲ID）
+                    const songIdMatch = song.url.match(/id=(\d+)/);
+                    const songId = songIdMatch ? songIdMatch[1] : '';
+                    
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b border-gray-100 song-card-hover';
+                    
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 text-center text-gray-500">${index + 1}</td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center">
+                                <img src="${song.pic || 'https://p1.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg'}" 
+                                     alt="${song.name}" 
+                                     class="w-10 h-10 rounded mr-3 object-cover">
+                                <div>
+                                    <div class="font-medium hover:text-primary transition-colors">${song.name || '未知歌曲'}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 hidden md:table-cell text-gray-600">${song.artist || '未知歌手'}</td>
+                        <td class="px-6 py-4 text-center">
+                            ${songId ? `
+                                <a href="https://music.163.com/#/song?id=${songId}" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   class="text-gray-400 hover:text-primary transition-colors mr-3"
+                                   title="在网易云音乐中打开">
+                                    <i class="fa fa-external-link"></i>
+                                </a>
+                            ` : ''}
+                            ${song.lrc ? `
+                                <button class="text-gray-400 hover:text-primary transition-colors show-lrc"
+                                        data-lrc="${song.lrc}"
+                                        title="查看歌词">
+                                    <i class="fa fa-music"></i>
+                                </button>
+                            ` : ''}
+                        </td>
+                    `;
+                    
+                    songsContainer.appendChild(tr);
+                });
+                
+                // 绑定歌词查看按钮事件
+                document.querySelectorAll('.show-lrc').forEach(btn => {
+                    btn.addEventListener('click', async function() {
+                        try {
+                            const lrcUrl = this.getAttribute('data-lrc');
+                            const response = await fetch(lrcUrl);
+                            const lrcText = await response.text();
+                            
+                            // 简单解析歌词（提取 [时间]歌词 格式）
+                            const parsedLrc = lrcText
+                                .split('\n')
+                                .filter(line => line.includes(']'))
+                                .map(line => {
+                                    const timeMatch = line.match(/\[(\d+:\d+\.\d+)\]/);
+                                    const text = line.replace(/\[.+\]/, '').trim();
+                                    return timeMatch ? `${timeMatch[1]} ${text}` : text;
+                                })
+                                .join('\n');
+                            
+                            alert(`歌词:\n\n${parsedLrc || '暂无歌词'}`);
+                        } catch (err) {
+                            alert('获取歌词失败');
+                            console.error('歌词获取失败:', err);
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

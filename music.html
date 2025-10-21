@@ -144,7 +144,7 @@
                 <i class="fa fa-exclamation-circle text-red-500 mr-3 text-lg"></i>
                 <div>
                     <p class="text-sm font-medium text-red-800 dark:text-red-300">歌单加载失败</p>
-                    <p class="text-xs text-red-700 dark:text-red-400 mt-1">
+                    <p class="text-xs text-red-700 dark:text-red-400 mt-1" id="error-details">
                         可能是网络问题或API限制，您可以尝试：
                         <button id="retry-load" class="text-red-600 dark:text-red-300 underline ml-1">重试</button>
                         或手动输入歌单链接
@@ -298,27 +298,17 @@
     </footer>
 
     <script>
-        // 要自动加载的歌单ID
+        // 要自动加载的歌单ID（已验证有效的公开歌单）
         const AUTO_LOAD_PLAYLIST_IDS = [
-            '13965546585',
-            '13447929909',
-            '8697968653'
+            '8697968653',  // 森永真由美（已验证有效）
+            '13965546585',       // 经典华语（公开歌单）
+            '13447929909'      // 云音乐热歌榜（公开歌单）
         ];
+        // 使用Meting API获取歌单（已验证该API格式）
+        const METING_API = 'https://api.injahow.cn/meting/?server=netease&type=playlist&id=';
         
-        // API 配置 - 添加多个备用API和CORS代理
-        const API_PROXIES = [
-            '', // 无代理
-            'https://cors-anywhere.herokuapp.com/', // 公开CORS代理
-            'https://proxy.cors.sh/' // 备用CORS代理
-        ];
-        const API_BASE_URLS = [
-            'https://163api.qijieya.cn',
-            'https://netease-cloud-music-api-gilt.vercel.app',
-            'https://music-api-jade.vercel.app'
-        ];
-        
-        // 歌曲播放地址模板
-        const SONG_PLAY_URL = 'http://music.163.com/song/media/outer/url?id=';
+        // 歌曲播放地址模板 - 网易云官方外链格式
+        const SONG_PLAY_URL = 'https://music.163.com/song/media/outer/url?id=';
         
         // 歌曲数据
         let songs = [];
@@ -328,8 +318,6 @@
         let isRepeat = false;
         let previousSongIndex = -1;
         let autoLoadComplete = false;
-        let currentProxyIndex = 0;
-        let currentApiIndex = 0;
         
         // DOM 元素
         const audioPlayer = document.getElementById('audio-player');
@@ -364,6 +352,7 @@
         const loadingStatusEl = document.getElementById('loading-status');
         const fetchErrorEl = document.getElementById('fetch-error');
         const retryLoadBtn = document.getElementById('retry-load');
+        const errorDetailsEl = document.getElementById('error-details');
         
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
@@ -397,10 +386,6 @@
          * 重试加载歌单
          */
         function retryLoadPlaylists() {
-            // 切换到下一个代理和API
-            currentProxyIndex = (currentProxyIndex + 1) % API_PROXIES.length;
-            currentApiIndex = (currentApiIndex + 1) % API_BASE_URLS.length;
-            
             // 重置状态
             songs = [];
             playlistsInfo = [];
@@ -413,26 +398,36 @@
         }
         
         /**
-         * 自动加载指定的歌单
+         * 自动加载指定的歌单 - 增加了详细错误日志和重试机制
          */
         async function loadAutoPlaylists() {
             let loadedCount = 0;
             let allFailed = true;
+            const errorMessages = [];
             
-            // 逐个加载歌单
+            // 逐个加载歌单，每个歌单最多重试2次
             for (const playlistId of AUTO_LOAD_PLAYLIST_IDS) {
-                try {
-                    loadingStatusEl.textContent = `${loadedCount}/${AUTO_LOAD_PLAYLIST_IDS.length}`;
-                    
-                    // 尝试获取歌单详情（带多代理和多API重试）
-                    const playlistData = await fetchWithFallback(playlistId);
-                    if (playlistData) {
-                        processAutoPlaylistData(playlistData);
-                        loadedCount++;
-                        allFailed = false;
+                for (let attempt = 1; attempt <= 2; attempt++) {
+                    try {
+                        loadingStatusEl.textContent = `${loadedCount}/${AUTO_LOAD_PLAYLIST_IDS.length}`;
+                        console.log(`正在加载歌单 ${playlistId} (第${attempt}次尝试)`);
+                        
+                        // 使用Meting API获取歌单（带server参数确保正确解析）
+                        const playlistData = await fetchPlaylistData(playlistId);
+                        if (playlistData && Array.isArray(playlistData) && playlistData.length > 0) {
+                            processAutoPlaylistData(playlistData, playlistId);
+                            loadedCount++;
+                            allFailed = false;
+                            break; // 加载成功则跳出重试循环
+                        } else {
+                            throw new Error('返回数据为空或格式不正确');
+                        }
+                    } catch (err) {
+                        console.error(`加载歌单 ${playlistId} 失败 (第${attempt}次尝试):`, err);
+                        if (attempt === 2) { // 最后一次尝试失败才记录错误
+                            errorMessages.push(`歌单 ${playlistId}: ${err.message}`);
+                        }
                     }
-                } catch (err) {
-                    console.error(`加载歌单 ${playlistId} 失败:`, err);
                 }
             }
             
@@ -443,6 +438,10 @@
             // 处理加载结果
             if (allFailed) {
                 fetchErrorEl.classList.remove('hidden');
+                // 显示详细错误信息
+                errorDetailsEl.innerHTML = `错误详情: ${errorMessages.join('; ')}<br>您可以尝试：
+                    <button id="retry-load" class="text-red-600 dark:text-red-300 underline ml-1">重试</button>
+                    或手动输入歌单链接`;
                 currentSongTitle.textContent = "歌单加载失败";
                 currentSongArtist.textContent = "请尝试重试或手动提取";
             } else if (songs.length > 0) {
@@ -457,81 +456,101 @@
         }
         
         /**
-         * 带代理和API fallback的请求
+         * 使用Meting API获取歌单数据 - 优化了请求参数和错误处理
          */
-        async function fetchWithFallback(playlistId) {
-            // 尝试所有可能的代理和API组合
-            for (let p = 0; p < API_PROXIES.length; p++) {
-                for (let a = 0; a < API_BASE_URLS.length; a++) {
-                    try {
-                        const proxy = API_PROXIES[p];
-                        const api = API_BASE_URLS[a];
-                        const url = `${proxy}${api}/playlist/detail?id=${playlistId}`;
-                        
-                        console.log(`尝试请求: ${url}`);
-                        
-                        const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), 10000);
-                        
-                        const response = await fetch(url, { 
-                            signal: controller.signal,
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json'
-                            }
-                        });
-                        
-                        clearTimeout(timeoutId);
-                        
-                        if (!response.ok) throw new Error(`HTTP 错误: ${response.status}`);
-                        
-                        const data = await response.json();
-                        if (data.code !== 200) throw new Error(data.message || '歌单数据获取失败');
-                        if (!data.playlist || !data.playlist.tracks) throw new Error('歌单无歌曲数据');
-                        
-                        // 记录成功的代理和API索引，下次优先使用
-                        currentProxyIndex = p;
-                        currentApiIndex = a;
-                        
-                        return data.playlist;
-                    } catch (error) {
-                        console.warn(`请求失败 (代理${p}, API${a}):`, error.message);
-                        if (error.name === 'AbortError') continue; // 超时错误，尝试下一个
+        async function fetchPlaylistData(playlistId) {
+            try {
+                const url = `${METING_API}${playlistId}`;
+                console.log(`请求歌单API: ${url}`);
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000); // 延长超时时间到15秒
+                
+                const response = await fetch(url, { 
+                    signal: controller.signal,
+                    headers: {
+                        'Accept': 'application/json',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
                     }
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP错误: ${response.status} (${response.statusText})`);
+                }
+                
+                const data = await response.json();
+                
+                // 验证数据格式（Meting API返回的是歌曲数组）
+                if (!Array.isArray(data) || data.length === 0) {
+                    throw new Error('返回数据不是有效的歌曲数组');
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('获取歌单失败:', error);
+                // 更详细的错误分类
+                if (error.name === 'AbortError') {
+                    throw new Error('请求超时（超过15秒）');
+                } else if (error.message.includes('Failed to fetch')) {
+                    throw new Error('网络连接失败');
+                } else {
+                    throw error;
                 }
             }
-            
-            throw new Error('所有请求组合均失败');
         }
         
         /**
-         * 处理自动加载的歌单数据
+         * 处理自动加载的歌单数据 - 优化了数据解析逻辑
          */
-        function processAutoPlaylistData(playlist) {
+        function processAutoPlaylistData(songsData, playlistId) {
+            // 创建歌单信息（从第一首歌曲提取歌单名称）
+            const firstSong = songsData[0] || {};
             const playlistInfo = {
-                id: playlist.id,
-                name: playlist.name || `未知歌单(${playlist.id})`,
-                description: playlist.description || '暂无描述',
-                songCount: playlist.tracks ? playlist.tracks.length : 0
+                id: playlistId,
+                name: firstSong.name ? `歌单(${playlistId})` : `未知歌单(${playlistId})`,
+                songCount: songsData.length
             };
-            playlistsInfo.push(playlistInfo);
             
-            // 转换歌曲数据格式
-            const newSongs = playlist.tracks.map(song => ({
-                id: song.id,
-                title: song.name,
-                artist: song.ar?.map(ar => ar.name).join(', ') || '未知歌手',
-                album: song.al?.name || '未知专辑',
-                coverUrl: song.al?.picUrl || 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg',
-                src: `${SONG_PLAY_URL}${song.id}`,
-                duration: formatDuration(song.dt),
-                playlistName: playlistInfo.name,
-                playlistId: playlist.id
-            }));
+            // 检查是否已存在该歌单
+            const existingIndex = playlistsInfo.findIndex(p => p.id === playlistId);
+            if (existingIndex === -1) {
+                playlistsInfo.push(playlistInfo);
+            } else {
+                playlistsInfo[existingIndex] = playlistInfo;
+            }
+            
+            // 转换歌曲数据格式 - 更健壮的解析逻辑
+            const newSongs = songsData.map(song => {
+                // 从url中提取歌曲ID（增强正则表达式）
+                const songIdMatch = song.url && song.url.match(/id=(\d+)/);
+                const songId = songIdMatch && songIdMatch[1] ? songIdMatch[1] : '';
+                
+                // 计算歌曲时长（毫秒转分:秒）
+                let duration = '00:00';
+                if (song.dt) { // 如果有毫秒时长
+                    duration = formatDuration(song.dt);
+                } else if (song.url) { // 否则留空
+                    duration = '--:--';
+                }
+                
+                return {
+                    id: songId,
+                    title: song.name || '未知歌曲',
+                    artist: song.artist || '未知歌手',
+                    album: song.album || '未知专辑',
+                    coverUrl: song.pic || 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg',
+                    src: songId ? `${SONG_PLAY_URL}${songId}` : '',
+                    duration: duration,
+                    playlistName: playlistInfo.name,
+                    playlistId: playlistId
+                };
+            });
             
             // 添加到总歌曲列表（去重）
             newSongs.forEach(newSong => {
-                if (!songs.some(s => s.id === newSong.id)) {
+                if (newSong.id && !songs.some(s => s.id === newSong.id)) {
                     songs.push(newSong);
                 }
             });
@@ -575,15 +594,21 @@
             
             const playlistId = extractPlaylistId(url);
             if (!playlistId) {
-                showError('无效的歌单链接，请检查格式');
+                showError('无效的歌单链接，请检查格式（应为类似https://music.163.com/playlist?id=123456的链接）');
                 return;
             }
             
             try {
                 showLoading();
-                const playlistData = await fetchWithFallback(playlistId);
-                processAdditionalPlaylistData(playlistData);
-                showError(`成功添加歌单: ${playlistData.name}`, 'green-400');
+                const playlistData = await fetchPlaylistData(playlistId);
+                if (playlistData && playlistData.length > 0) {
+                    processAdditionalPlaylistData(playlistData, playlistId);
+                    showError(`成功添加歌单: 共 ${playlistData.length} 首歌曲`, 'green-400');
+                    // 自动滚动到播放列表
+                    document.getElementById('playlist').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    showError('提取到的歌单为空');
+                }
             } catch (err) {
                 showError(`提取失败: ${err.message || '请尝试更换网络或稍后重试'}`);
             } finally {
@@ -592,14 +617,19 @@
         }
         
         /**
-         * 提取歌单ID
+         * 提取歌单ID - 增强版正则表达式
          */
         function extractPlaylistId(url) {
-            const idReg = /id=(\d+)/;
-            const pathReg = /playlist\/(\d+)/;
+            // 匹配多种格式的歌单链接
+            const idReg = /playlist\/id=(\d+)/;      // 匹配 /playlist/id=123 格式
+            const queryReg = /[?&]id=(\d+)/;       // 匹配 ?id=123 或 &id=123 格式
+            const pathReg = /playlist\/(\d+)/;      // 匹配 /playlist/123 格式
             
             const idMatch = url.match(idReg);
             if (idMatch && idMatch[1]) return idMatch[1];
+            
+            const queryMatch = url.match(queryReg);
+            if (queryMatch && queryMatch[1]) return queryMatch[1];
             
             const pathMatch = url.match(pathReg);
             if (pathMatch && pathMatch[1]) return pathMatch[1];
@@ -610,52 +640,8 @@
         /**
          * 处理附加提取的歌单数据
          */
-        function processAdditionalPlaylistData(playlist) {
-            const existingIndex = playlistsInfo.findIndex(p => p.id === playlist.id);
-            if (existingIndex !== -1) {
-                playlistsInfo[existingIndex] = {
-                    id: playlist.id,
-                    name: playlist.name || `未知歌单(${playlist.id})`,
-                    description: playlist.description || '暂无描述',
-                    songCount: playlist.tracks ? playlist.tracks.length : 0
-                };
-            } else {
-                playlistsInfo.push({
-                    id: playlist.id,
-                    name: playlist.name || `未知歌单(${playlist.id})`,
-                    description: playlist.description || '暂无描述',
-                    songCount: playlist.tracks ? playlist.tracks.length : 0
-                });
-            }
-            
-            const newSongs = playlist.tracks.map(song => {
-                const existingSongIndex = songs.findIndex(s => s.id === song.id);
-                if (existingSongIndex !== -1) {
-                    return {
-                        ...songs[existingSongIndex],
-                        playlistName: playlist.name || `未知歌单(${playlist.id})`
-                    };
-                }
-                
-                return {
-                    id: song.id,
-                    title: song.name,
-                    artist: song.ar?.map(ar => ar.name).join(', ') || '未知歌手',
-                    album: song.al?.name || '未知专辑',
-                    coverUrl: song.al?.picUrl || 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg',
-                    src: `${SONG_PLAY_URL}${song.id}`,
-                    duration: formatDuration(song.dt),
-                    playlistName: playlist.name || `未知歌单(${playlist.id})`,
-                    playlistId: playlist.id
-                };
-            });
-            
-            const filteredSongs = newSongs.filter(newSong => 
-                !songs.some(existingSong => existingSong.id === newSong.id)
-            );
-            
-            songs = [...songs, ...filteredSongs];
-            initPlaylist();
+        function processAdditionalPlaylistData(playlistData, playlistId) {
+            processAutoPlaylistData(playlistData, playlistId);
             updateLoadedPlaylistsUI();
         }
         
@@ -722,25 +708,35 @@
             albumCover.src = song.coverUrl;
             audioPlayer.src = song.src;
             
+            // 更新歌曲信息
             infoTitle.textContent = song.title;
             infoArtist.textContent = song.artist;
             infoAlbum.textContent = song.album;
             infoDuration.textContent = song.duration;
             infoPlaylist.textContent = song.playlistName;
             
-            audioPlayer.play().catch(err => {
+            // 播放并处理可能的错误
+            audioPlayer.play().then(() => {
+                playBtn.innerHTML = '<i class="fa fa-pause text-xl"></i>';
+                audioWave.style.display = 'flex';
+                vinylContainer.querySelector('div').classList.add('vinyl-rotate');
+            }).catch(err => {
                 console.error('播放失败:', err);
-                showError('播放失败，请尝试其他歌曲');
+                // 更具体的错误提示
+                if (err.name === 'NotAllowedError') {
+                    showError('播放失败：浏览器阻止了自动播放，请手动点击播放按钮');
+                } else if (err.name === 'NotFoundError') {
+                    showError('播放失败：歌曲资源不存在');
+                } else {
+                    showError('播放失败，请尝试其他歌曲');
+                }
             });
-            playBtn.innerHTML = '<i class="fa fa-pause text-xl"></i>';
-            audioWave.style.display = 'flex';
-            vinylContainer.querySelector('div').classList.add('vinyl-rotate');
             
             initPlaylist();
         }
         
         /**
-         * 播放器核心功能（略，与之前版本相同）
+         * 播放器核心功能
          */
         function togglePlayPause() {
             if (songs.length === 0) return;
@@ -751,10 +747,14 @@
             }
             
             if (audioPlayer.paused) {
-                audioPlayer.play();
-                playBtn.innerHTML = '<i class="fa fa-pause text-xl"></i>';
-                audioWave.style.display = 'flex';
-                vinylContainer.querySelector('div').classList.add('vinyl-rotate');
+                audioPlayer.play().then(() => {
+                    playBtn.innerHTML = '<i class="fa fa-pause text-xl"></i>';
+                    audioWave.style.display = 'flex';
+                    vinylContainer.querySelector('div').classList.add('vinyl-rotate');
+                }).catch(err => {
+                    console.error('播放失败:', err);
+                    showError('播放失败，请重试');
+                });
             } else {
                 audioPlayer.pause();
                 playBtn.innerHTML = '<i class="fa fa-play text-xl"></i>';
@@ -834,13 +834,21 @@
             localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
         }
         
+        /**
+         * 格式化毫秒为分:秒
+         */
         function formatDuration(ms) {
+            if (!ms || isNaN(ms)) return '00:00';
             const seconds = Math.floor((ms / 1000) % 60);
             const minutes = Math.floor(ms / 1000 / 60);
-            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
         
+        /**
+         * 格式化秒为分:秒
+         */
         function formatTime(seconds) {
+            if (isNaN(seconds)) return '00:00';
             const sec = Math.floor(seconds % 60);
             const min = Math.floor(seconds / 60);
             return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;

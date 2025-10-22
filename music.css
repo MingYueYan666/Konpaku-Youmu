@@ -1,0 +1,131 @@
+/* Tailwind 配置 - 这部分需要保留在CSS文件中以确保Tailwind能正确解析自定义配置 */
+@layer utilities {
+    .text-shadow {
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    .glass {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .dark .glass {
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .vinyl-shadow {
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(0, 0, 0, 0.3);
+    }
+    .audio-wave span {
+        display: block;
+        width: 3px;
+        margin: 0 2px;
+        background-color: theme('colors.secondary');
+        animation: wave 1.2s infinite ease-in-out;
+    }
+    .dark .audio-wave span {
+        background-color: theme('colors.primary');
+    }
+    @keyframes wave {
+        0%, 100% { height: 10px; }
+        50% { height: 40px; }
+    }
+    .audio-wave span:nth-child(2) { animation-delay: 0.1s; }
+    .audio-wave span:nth-child(3) { animation-delay: 0.2s; }
+    .audio-wave span:nth-child(4) { animation-delay: 0.3s; }
+    .audio-wave span:nth-child(5) { animation-delay: 0.4s; }
+    .playlist-tab-active {
+        border-bottom: 2px solid theme('colors.secondary');
+        color: theme('colors.secondary');
+    }
+    .dark .playlist-tab-active {
+        border-bottom: 2px solid theme('colors.primary');
+        color: theme('colors.primary');
+    }
+    .playlist-fade-enter {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    .playlist-fade-enter-active {
+        opacity: 1;
+        transform: translateY(0);
+        transition: opacity 300ms, transform 300ms;
+    }
+}
+
+/* 基础样式 */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #555; }
+.dark ::-webkit-scrollbar-track { background: #1e293b; }
+.dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+body {
+    background-image: url('image/6.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
+
+input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.2);
+}
+.dark input[type="range"] { background: rgba(255, 255, 255, 0.1); }
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: theme('colors.secondary');
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+.dark input[type="range"]::-webkit-slider-thumb { background: theme('colors.primary'); }
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.vinyl-rotate { animation: rotate 10s linear infinite; }
+
+/* 歌单标签样式优化 */
+#playlist-tabs {
+    /* 允许标签自动换行 */
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.playlist-tab {
+    /* 标签样式改为圆角按钮状，更易点击 */
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+    .playlist-tab:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+/* 激活状态样式调整 */
+.playlist-tab-active {
+    /* 去掉下划线，改用背景色区分 */
+    border-bottom: none;
+    background: theme('colors.secondary');
+    color: white;
+}
+
+.dark .playlist-tab-active {
+    background: theme('colors.primary');
+    color: white;
+}
+
+/* 移除原水平滚动相关样式 */
+#playlist-tabs-container {
+    overflow-x: visible; /* 去掉水平滚动 */
+}

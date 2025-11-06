@@ -115,6 +115,7 @@
                 <a href="#" class="nav-link active">首页</a>
                 <a href="opengl-tutorial.html" class="nav-link">OpenGL教程</a>
                 <a href="music.html" class="nav-link">音乐</a>
+                <a href="gameDownload.html" class="nav-link">下载</a> <!-- 导航栏添加下载链接 -->
                 <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-dark-100 transition-colors">
                     <i class="fa fa-moon-o dark:hidden" aria-hidden="true"></i>
                     <i class="fa fa-sun-o hidden dark:block text-yellow-400" aria-hidden="true"></i>
@@ -175,8 +176,8 @@
             </div>
         </section>
 
-        <!-- 功能入口区域 -->
-        <section class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+        <!-- 功能入口区域 - 修改为3列布局 -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             <!-- OpenGL 教程入口 -->
             <div class="glass rounded-xl overflow-hidden card-hover" data-aos="fade-right">
                 <div class="relative h-48 overflow-hidden">
@@ -196,7 +197,7 @@
             </div>
 
             <!-- 音乐页面入口 -->
-            <div class="glass rounded-xl overflow-hidden card-hover" data-aos="fade-left">
+            <div class="glass rounded-xl overflow-hidden card-hover" data-aos="fade-up">
                 <div class="relative h-48 overflow-hidden">
                     <img src="image/6.png" alt="音乐页面" class="w-full h-full object-cover">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
@@ -209,6 +210,24 @@
                     </p>
                     <a href="music.html" class="inline-block bg-secondary hover:bg-secondary/80 text-white font-medium py-2 px-6 rounded-lg transition-colors">
                         进入音乐室 <i class="fa fa-music ml-2"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 新增：游戏下载入口 -->
+            <div class="glass rounded-xl overflow-hidden card-hover" data-aos="fade-left">
+                <div class="relative h-48 overflow-hidden">
+                    <img src="image/download.png" alt="游戏下载" class="w-full h-full object-cover"> <!-- 假设使用download.png作为图片 -->
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
+                        <h2 class="text-2xl font-bold p-4 text-white">游戏下载</h2>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <p class="mb-4 text-gray-700 dark:text-gray-300">
+                        下载使用 C++/OpenGL/GLFW 开发的演示游戏和应用程序。
+                    </p>
+                    <a href="gameDownload.html" class="inline-block bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-6 rounded-lg transition-colors">
+                        立即下载 <i class="fa fa-download ml-2"></i>
                     </a>
                 </div>
             </div>
